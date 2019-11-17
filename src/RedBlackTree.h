@@ -6,16 +6,21 @@
 
 namespace bulumutka {
 
+enum class Color {
+    BLACK,
+    RED
+};
+
 template <typename T>
 struct Node {
     T value;
     Node *parent;
     Node *left;
     Node *right;
-    bool color;  // 0 - black, 1 - red
+    Color color;
 
     Node();
-    Node(const T &value, bool color);
+    Node(const T &value, Color color);
     explicit Node(const Node<T> *other);
 };
 
@@ -23,7 +28,7 @@ template <typename T>
 Node<T>::Node() : parent(nullptr), left(nullptr), right(nullptr) {}
 
 template <typename T>
-Node<T>::Node(const T &value, bool color) : Node() {
+Node<T>::Node(const T &value, Color color) : Node() {
     this->value = value;
     this->color = color;
 }
@@ -83,8 +88,6 @@ class Set {
     iterator end() const;
 
    private:
-    static const bool BLACK = false;
-    static const bool RED = true;
     Node<T> *root_;
     size_t size_;
 
@@ -354,7 +357,7 @@ Set<T> &Set<T>::operator=(Set<T> &other) {
 template <typename T>
 void Set<T>::insert(const T &key) {
     if (!root_) {
-        root_ = new Node<T>(key, BLACK);
+        root_ = new Node<T>(key, Color::BLACK);
         ++size_;
         return;
     }
@@ -373,7 +376,7 @@ void Set<T>::insert(const T &key) {
         }
     } while (node != nullptr);
 
-    node = new Node<T>(key, RED);
+    node = new Node<T>(key, Color::RED);
     node->parent = parent;
 
     if (key < parent->value) {
@@ -549,16 +552,16 @@ void Set<T>::small_right_rotate_(Node<T> *node) {
 template <typename T>
 void Set<T>::insert_1_case_(Node<T> *node) {
     if (node->parent == nullptr) {  // is root
-        node->color = BLACK;
+        node->color = Color::BLACK;
         root_ = node;
-    } else if (node->color == RED) {
+    } else if (node->color == Color::RED) {
         insert_2_case_(node);  // not root and red
     }
 }
 
 template <typename T>
 void Set<T>::insert_2_case_(Node<T> *node) {
-    if (node->parent->color == RED) {  // else all is ok
+    if (node->parent->color == Color::RED) {  // else all is ok
         insert_3_case_(node);
     }
 }
@@ -567,10 +570,10 @@ template <typename T>
 void Set<T>::insert_3_case_(Node<T> *node) {
     auto *grand = getGrandparent(node);             // always exists
     auto *uncle = getUncle(node);                   // can be null
-    if (uncle != nullptr && uncle->color == RED) {  // parent already RED
-        node->parent->color = BLACK;
-        uncle->color = BLACK;
-        grand->color = RED;
+    if (uncle != nullptr && uncle->color == Color::RED) {  // parent already RED
+        node->parent->color = Color::BLACK;
+        uncle->color = Color::BLACK;
+        grand->color = Color::RED;
         insert_1_case_(grand);
     } else {
         insert_4_case_(node);
@@ -593,8 +596,8 @@ void Set<T>::insert_4_case_(Node<T> *node) {
 template <typename T>
 void Set<T>::insert_5_case_(Node<T> *node) {
     auto *grand = getGrandparent(node);
-    node->parent->color = BLACK;
-    grand->color = RED;
+    node->parent->color = Color::BLACK;
+    grand->color = Color::RED;
     if (node == node->parent->left && node->parent == grand->left) {
         rotate_right_(grand);
     } else {
@@ -646,9 +649,9 @@ void Set<T>::erase_one_child_(Node<T> *node) {
     Node<T> *child = node->left ? node->left : node->right;
     if (child) {
         replace_node_(node, child);
-        if (node->color == BLACK) {
-            if (child->color == RED) {
-                child->color = BLACK;
+        if (node->color == Color::BLACK) {
+            if (child->color == Color::RED) {
+                child->color = Color::BLACK;
             } else {
                 delete_1_case_(child);
             }
@@ -657,7 +660,7 @@ void Set<T>::erase_one_child_(Node<T> *node) {
             root_ = child;
         }
     } else {
-        if (node->color == BLACK) {
+        if (node->color == Color::BLACK) {
             delete_1_case_(node);
         }
     }
@@ -682,7 +685,7 @@ void Set<T>::delete_1_case_(Node<T> *node) {
     if (node->parent) {
         delete_2_case_(node);
     } else {
-        node->color = BLACK;
+        node->color = Color::BLACK;
         root_ = node;
     }
 }
@@ -691,9 +694,9 @@ template <typename T>
 void Set<T>::delete_2_case_(Node<T> *node) {
     // node's parent exists
     auto *sub = subling(node);  // sub isn't null
-    if (sub->color == RED) {
-        node->parent->color = RED;
-        sub->color = BLACK;
+    if (sub->color == Color::RED) {
+        node->parent->color = Color::RED;
+        sub->color = Color::BLACK;
         if (node == node->parent->left) {
             rotate_left_(node->parent);
         } else {
@@ -709,9 +712,9 @@ void Set<T>::delete_2_case_(Node<T> *node) {
 template <typename T>
 void Set<T>::delete_3_case_(Node<T> *node) {
     auto *sub = subling(node);
-    if ((node->parent->color == BLACK) && (sub->color == BLACK) &&
-        (!sub->left || sub->left->color == BLACK) && (!sub->right || sub->right->color == BLACK)) {
-        sub->color = RED;
+    if ((node->parent->color == Color::BLACK) && (sub->color == Color::BLACK) &&
+        (!sub->left || sub->left->color == Color::BLACK) && (!sub->right || sub->right->color == Color::BLACK)) {
+        sub->color = Color::RED;
         delete_1_case_(node->parent);
     } else {
         delete_4_case_(node);
@@ -721,10 +724,10 @@ void Set<T>::delete_3_case_(Node<T> *node) {
 template <typename T>
 void Set<T>::delete_4_case_(Node<T> *node) {
     auto *sub = subling(node);
-    if ((node->parent->color == RED) && (sub->color == BLACK) &&
-        (!sub->left || sub->left->color == BLACK) && (!sub->right || sub->right->color == BLACK)) {
-        sub->color = RED;
-        node->parent->color = BLACK;
+    if ((node->parent->color == Color::RED) && (sub->color == Color::BLACK) &&
+        (!sub->left || sub->left->color == Color::BLACK) && (!sub->right || sub->right->color == Color::BLACK)) {
+        sub->color = Color::RED;
+        node->parent->color = Color::BLACK;
     } else {
         delete_5_case_(node);
     }
@@ -733,16 +736,16 @@ void Set<T>::delete_4_case_(Node<T> *node) {
 template <typename T>
 void Set<T>::delete_5_case_(Node<T> *node) {
     auto *sub = subling(node);
-    if (sub->color == BLACK) {
-        if ((node == node->parent->left) && (!sub->right || sub->right->color == BLACK) &&
-            (sub->left->color == RED)) {
-            sub->color = RED;
-            sub->left->color = BLACK;
+    if (sub->color == Color::BLACK) {
+        if ((node == node->parent->left) && (!sub->right || sub->right->color == Color::BLACK) &&
+            (sub->left->color == Color::RED)) {
+            sub->color = Color::RED;
+            sub->left->color = Color::BLACK;
             rotate_right_(sub);
-        } else if ((node == node->parent->right) && (!sub->left || sub->left->color == BLACK) &&
-                   (sub->right->color == RED)) {
-            sub->color = RED;
-            sub->right->color = BLACK;
+        } else if ((node == node->parent->right) && (!sub->left || sub->left->color == Color::BLACK) &&
+                   (sub->right->color == Color::RED)) {
+            sub->color = Color::RED;
+            sub->right->color = Color::BLACK;
             rotate_left_(sub);
         }
     }
@@ -753,12 +756,12 @@ template <typename T>
 void Set<T>::delete_6_case_(Node<T> *node) {
     auto *sub = subling(node);
     sub->color = node->parent->color;
-    node->parent->color = BLACK;
+    node->parent->color = Color::BLACK;
     if (node == node->parent->left) {
-        sub->right->color = BLACK;
+        sub->right->color = Color::BLACK;
         rotate_left_(node->parent);
     } else {
-        sub->left->color = BLACK;
+        sub->left->color = Color::BLACK;
         rotate_right_(node->parent);
     }
 
